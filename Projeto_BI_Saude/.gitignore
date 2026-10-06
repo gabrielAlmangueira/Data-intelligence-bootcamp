@@ -1,0 +1,28 @@
+# ============================================================
+# .gitignore — Projeto BI Saúde
+# ============================================================
+
+# Credenciais — NUNCA commitar
+.env
+
+# Dados brutos baixados da API (arquivos grandes, não vão pro GitHub)
+dados_brutos/
+
+# Gráficos gerados (opcional — remova esta linha se quiser commitá-los)
+# graficos/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Jupyter
+.ipynb_checkpoints/
+
+# VS Code
+.vscode/
+
+# Sistemas operacionais
+.DS_Store
+Thumbs.db
