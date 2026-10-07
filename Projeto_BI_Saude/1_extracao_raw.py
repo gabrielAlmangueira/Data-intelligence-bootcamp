@@ -17,22 +17,34 @@ Como rodar:
 """
 
 import os
+from pathlib import Path
+
 import pandas as pd
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
-import kaggle
+from kaggle.api.kaggle_api_extended import KaggleApi
 
 # ============================================================
 # 0. CARREGAMENTO DE CREDENCIAIS
 # ============================================================
-load_dotenv()
+ENV_FILE = Path(__file__).resolve().with_name(".env")
+if not ENV_FILE.is_file():
+    raise FileNotFoundError(f"Arquivo de credenciais não encontrado: {ENV_FILE}")
 
-variaveis_obrigatorias = ["KAGGLE_USERNAME", "KAGGLE_KEY", "DB_USER", "DB_PASS", "DB_NAME"]
+load_dotenv(dotenv_path=ENV_FILE, override=True)
+
+variaveis_obrigatorias = ["KAGGLE_USERNAME", "KAGGLE_API_TOKEN", "DB_USER", "DB_PASS", "DB_NAME"]
 for var in variaveis_obrigatorias:
     if not os.getenv(var):
         raise EnvironmentError(f"A variável '{var}' não foi encontrada no arquivo .env.")
 
 print("✅ Credenciais carregadas com sucesso do arquivo .env")
+
+# Autentica um cliente criado após carregar o .env, garantindo que ele use
+# KAGGLE_USERNAME e KAGGLE_API_TOKEN definidos nesse arquivo.
+kaggle_api = KaggleApi()
+kaggle_api.authenticate()
+print("✅ Autenticação com a API do Kaggle estabelecida com sucesso!")
 
 # ============================================================
 # 1. CONEXÃO COM O POSTGRESQL
@@ -82,12 +94,16 @@ for tabela, arquivo in ARQUIVOS.items():
         print(f"  ⚡ Arquivo já existe localmente. Pulando download.")
     else:
         print(f"  📥 Baixando {arquivo} da API do Kaggle...")
-        kaggle.api.dataset_download_file(
+        kaggle_api.dataset_download_file(
             dataset=DATASET,
             file_name=arquivo,
             path=DOWNLOAD_PATH,
             quiet=False
         )
+        if not os.path.isfile(caminho_arquivo):
+            raise FileNotFoundError(
+                f"A API do Kaggle não criou o arquivo esperado: {caminho_arquivo}"
+            )
         print(f"  ✅ Download concluído!")
 
     print(f"  📖 Lendo o arquivo Parquet...")
@@ -115,4 +131,3 @@ for tabela, arquivo in ARQUIVOS.items():
     print(f"  ✅ {tabela} carregada! ({df.shape[0]:,} registros)\n")
 
 print("\n🎉 FASE 1 CONCLUÍDA — Dados brutos disponíveis no PostgreSQL!")
-
